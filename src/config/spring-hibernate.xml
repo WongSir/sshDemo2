@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+                     http://www.springframework.org/schema/beans/spring-beans.xsd 
+                     http://www.springframework.org/schema/tx 
+                     http://www.springframework.org/schema/tx/spring-tx.xsd 
+                     http://www.springframework.org/schema/aop 
+                     http://www.springframework.org/schema/aop/spring-aop.xsd"> 
+        
+	<!-- 配置hibernate相关数据库的操作(配置数据源)-->
+	<bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<!-- 数据库驱动 -->
+		<property name="driverClassName" value="com.mysql.jdbc.Driver"></property>
+		<property name="url" value="jdbc:mysql://localhost:3306/test_ssh"></property>
+		<property name="username" value="root"></property>
+		<property name="password" value="root"></property>
+	</bean>
+	
+	<!-- 配置二级缓存（sessionFactory缓存），一级缓存（session缓存）默认开启 -->
+	<bean id="sessionFactory" class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="hibernateProperties">
+			<props>
+				<!-- 配置不同数据库的方言 -->
+				<prop key="hibernate.dialect">org.hibernate.dialect.MySQLDialect</prop>
+				<!-- 其实这个参数的作用主要用于：自动创建|更新|验证数据库表结构。如果不是此方面的需求建议set value="none"
+				其他几个参数的意思：
+					validate：加载Hibernate时，验证创建数据库表结构
+					create：每次加载Hibernate，重新创建数据库表结构，这就是导致数据库表数据丢失的原因
+					create-drop：加载Hibernate时创建，退出是删除表结构
+					update：加载Hibernate自动更新数据库表结构
+				 -->
+				<prop key="hibernate.hbm2ddl.auto">update</prop>
+				<!-- 是否显示sql语句 -->
+				<prop key="hibernate.show_sql">true</prop>
+				<prop key="hibernate.format_sql">true</prop>
+			</props>
+		</property>
+		<property name="annotatedClasses">
+			<list>
+				<!-- 读取实体 -->
+				<value>com.wongsir.sshDemo.entity.User</value>
+			</list>
+		</property>
+		<!-- 
+			配置实体类可以用下面这个，一次配置就行，直接扫描包
+			<property name="packagesToScan" value="com.wongsir.sshDemo.entity"/>
+		 -->
+	</bean>
+	
+	<!-- 
+	声明式事务配置主要分以下几步：
+		1、	配置事务管理器
+		2、事务的传播特性
+		3、哪些类的哪些方法使用事务
+	 -->
+	<!-- 配置事务管理器   指定其作用的SessionFactory把事务交给Spring去处理-->
+	<bean id="transactionManager" class="org.springframework.orm.hibernate4.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory"></property>
+	</bean>
+	
+	<tx:annotation-driven transaction-manager="transactionManager" proxy-target-class="true"/>
+	<!-- 配置事务的传播特性 -->
+	<!-- <tx:advice id="txAdvice" transaction-manager="transactionManager">
+		<tx:attributes>
+			REQUIRED: 如果存在一个事务，则支持当前事务。如果没有事务则开启；
+			<tx:method name="save*" propagation="REQUIRED" />
+			<tx:method name="add*" propagation="REQUIRED" />
+			<tx:method name="create*" propagation="REQUIRED" />
+			<tx:method name="insert*" propagation="REQUIRED" />
+			<tx:method name="update*" propagation="REQUIRED" />
+			<tx:method name="merge*" propagation="REQUIRED" />
+			<tx:method name="del*" propagation="REQUIRED" />
+			<tx:method name="remove*" propagation="REQUIRED" />
+			<tx:method name="put*" propagation="REQUIRED" />
+			<tx:method name="*" propagation="SUPPORTS" read-only="true" />
+		</tx:attributes>
+	</tx:advice>
+	哪些类的哪些方法参与事务
+	<aop:config>
+		<aop:pointcut id="AllServiceMethods" expression="execution(* com.wongsir.sshDemo.service..*.*(..))" />
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="AllServiceMethods" />
+	</aop:config> -->
+
+</beans>
